@@ -1,22 +1,26 @@
-?? OOP PHP Stock System
+## 📦 OOP PHP Stock System
 A simple stock management system created with PHP using OOP concepts. 
 
-?? About
+## About
 This project made a simple stock management, that allows the user to create/edit/delete their products and control their stock with a special stock handling module. Its have form validation and referential integrity.
 
 The main objective with this project is practice OOP and Database rules.
 
-?? Funcionalities
-? Product registration/edit/delete
-? Stock control
-? Product handles control
-? Referential integrity 
-? Form validation
+## Funcionalities
+- Product registration/edit/delete
+- Stock control
+- Product handles control
+- Referential integrity 
+- Form validation
 
-??? Techonologies
+## Technologies
+- PHP
+- JavaScript
+- MySQL
     
-?? Project structure
+## Project structure
 
+<div style="display: flex; flex-direction: column">
 ¦   index.php
 ¦   README.md
 ¦   
@@ -55,8 +59,9 @@ The main objective with this project is practice OOP and Database rules.
     +---js
             table-handles.js
             table-index.js
+</div>
 
-?? Como executar o projeto
+## How to execute the project
 Requirements:
 PHP 8+
 MySQL
