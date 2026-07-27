@@ -5,9 +5,9 @@ require_once __DIR__ . "/../app/controllers/productController.php";
 require_once __DIR__ . "/../app/helper/executeSQL.php";
 
 if($_SERVER['REQUEST_METHOD'] === "POST") {
-    executeSQL("INSERT INTO products (description, qtd) VALUES (:desc, 0)", ["desc" => $_POST["description"]]);
+    Product::insertProduct($_POST["description"]);
 
-    $_SESSION["success"] = "Cadastrado com sucesso!";
+    $_SESSION["success"] = "Produto cadastrado com sucesso!";
 }
 
 ?>
@@ -30,15 +30,8 @@ if($_SERVER['REQUEST_METHOD'] === "POST") {
                 <a href="../index.php" type="button" class="btn btn-secondary">Voltar</a>
         </div>
 
-        <?php
-            if(isset($_SESSION["success"])) {
-                echo '<div class="alert alert-success" role="alert">'
-                        . $_SESSION['success'] . 
-                    '</div>';
-
-                unset($_SESSION['success']);
-            }
-        ?>
+        <?php require __DIR__ . "/../resources/components/error.php" ?>
+        <?php require __DIR__ . "/../resources/components/success.php" ?>
 
         <form class="w-100" method="POST" action="product.php">
             <h1>Cadastrar produto</h1>

@@ -7,39 +7,14 @@ require_once __DIR__ . "/../app/helper/executeSQL.php";
 
 $allProducts = Product::fetchProducts();
 
-function fetchProducts()
+$products = $handling = $status = $type = [];
+
+function refreshData()
 {
-    global $conn;
-
-    $sql = "
-        SELECT
-            p.id,
-            p.description,
-            phi.qtd
-        FROM product_handling_item phi
-
-        JOIN products p
-            ON p.id = phi.prd_id
-
-        WHERE phi.h_id = :id
-    ";
-
-    $stmt = $conn->prepare($sql);
-    $stmt->execute([
-        "id" => $_GET["id"]
-    ]);
-
-    $products = $stmt->fetchAll();
-    return $products;
-}
-
-$products = $handling = $status = $type = null;
-
-function refreshData() {
     global $products, $handling, $status, $type;
 
-    $products = fetchProducts();
-    $handling = Handling::fetchHandling(["id" => $_GET["id"]]);
+    $products = Product::fetchProductHandle($_GET["id"]);
+    $handling = Handling::fetchHandling($_GET["id"]);
 
     $status = $handling["status"];
     $type = $handling["type"];
@@ -53,7 +28,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         die("Error 403 | Unauthorized Action");
     };
 
-    // Ex.: [1, 12, 8, 34]
     $products_id = [];
 
     foreach ($products as $p) {
@@ -65,74 +39,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     };
 
     for ($i = 0; $i < count($products_id); $i++) {
-        if (in_array($products_id[$i], $_POST["products"])) {
-            //echo "Esse produto deve permancer nas movimentações $products_id[$i] <br>";
-        } else {
-            $sql = "
-                DELETE FROM product_handling_item
-                WHERE prd_id = :prd_id AND h_id = :h_id
-            ";
-
-            $stmt = $conn->prepare($sql);
-            $stmt->execute([
-                "prd_id" => $products_id[$i],
-                "h_id" => $_GET["id"],
-            ]);
-
-            //echo "Produto $products_id[$i] removido!";
-        };
+        if (!in_array($products_id[$i], $_POST["products"])) {
+            Handling::deleteHandleItem($products_id[$i], $_GET["id"]);
+        }
     };
 
     for ($i = 0; $i < count($_POST["products"]); $i++) {
-        if (in_array($_POST["products"][$i], $products_id)) {
-            //echo "Esse produto " . $_POST['products'][$i] . " já estava nas movimentações <br>";
-        } else {
-            Handling::insertHandleItem([
-                "h_id" => $_GET["id"],
-                "prd_id" => $_POST['products'][$i],
-                "qtd" => $_POST['quantities'][$i],
-            ]);
-        };
+        if (!in_array($_POST["products"][$i], $products_id)) {
+            Handling::insertHandleItem(
+                $_GET["id"],
+                $_POST['products'][$i],
+                $_POST['quantities'][$i],
+            );
+        }
     };
 
     // Permanecer registro em aberto
     if ($status == "A") {
-
         for ($i = 0; $i < count($_POST['products']); $i++) {
-            $sql = "
-                    UPDATE product_handling_item
-                    SET qtd = :qtd
-                    WHERE prd_id = :prd_id AND h_id = :h_id
-                ";
+            Handling::updateItemQuantity(
+                $_POST["quantities"][$i],
+                $_POST["products"][$i],
+                $_GET["id"]
+            );
 
-            $stmt = $conn->prepare($sql);
-            $stmt->execute([
-                "prd_id" => $_POST['products'][$i],
-                "h_id" => $_GET["id"],
-                "qtd" => $_POST['quantities'][$i],
-            ]);
+            $_SESSION["success"] = "Registro alterado com sucesso!";
         }
     }
 
     // Fechar e efetivar movimentação
     if ($status == "A" && $_POST["status"] == "F") {
-        $sql = "
-                    UPDATE product_handling
-                    SET status = 'F'
-                    WHERE id = :id
-                ";
-
-        $stmt = $conn->prepare($sql);
-        $stmt->execute([
-            "id" => $_GET["id"],
-        ]);
+        Handling::updateHandligStatus($_GET["id"], "F");
 
         for ($i = 0; $i < count($_POST['products']); $i++) {
-            Product::updateQuantity([
-                "id" => $_POST['products'][$i],
-                "qtd" => $_POST['quantities'][$i]
-            ], $_POST["type"]);
+            Product::updateQuantity(
+                $_POST['products'][$i],
+                $_POST['quantities'][$i],
+                $_POST["type"]
+            );
         }
+        $_SESSION["success"] = "Movimentação concluída com sucesso!";
     }
 
     refreshData();
@@ -161,7 +107,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form class="w-100" method="POST" action="handleEdit.php?id=<?= $_GET["id"] ?>">
             <h1><?= $status === "A" ? "Editar movimentação" : "Visualizar movimentação" ?></h1>
 
-            <p <?= $status === "A" ? "" : "hidden" ?> >Preencha os campos abaixo:</p>
+            <p <?= $status === "A" ? "" : "hidden" ?>>Preencha os campos abaixo:</p>
+
+            <?php require __DIR__ . "/../resources/components/error.php" ?>
+            <?php require __DIR__ . "/../resources/components/success.php" ?>
 
             <div class="mb-3 w-25">
                 <label for="status" class="form-label">Status</label>
@@ -197,11 +146,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         echo '
                                         <div class="d-flex gap-2 mb-2 product-row">
-                                            <select '. $disabled .' name="products[]" class="form-select flex-grow-1">
+                                            <select ' . $disabled . ' name="products[]" class="form-select flex-grow-1">
                                                 <option value="' . $product["id"] . '" selected>' . $product['description'] . '</option>
                                             </select>
-                                            <input '. $disabled .' type="number" name="quantities[]" class="form-control" style="max-width: 120px;" value="' . $product["qtd"] . '" placeholder="Qtd" min="1">
-                                            <button '. $disabled .' type="button" class="btn btn-danger btn-remove" onclick="removeRow(this)">X</button>
+                                            <input ' . $disabled . ' type="number" name="quantities[]" class="form-control" style="max-width: 120px;" value="' . $product["qtd"] . '" placeholder="Qtd" min="1">
+                                            <button ' . $disabled . ' type="button" class="btn btn-danger btn-remove" onclick="removeRow(this)">X</button>
                                         </div>
                                         ';
                     }

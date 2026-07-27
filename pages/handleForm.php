@@ -10,11 +10,11 @@ $products = Product::fetchProducts();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($_POST["status"] == "F") {
-        Handling::insertHandling([
-            "type" => $_POST["type"],
-            "status" => $_POST["status"],
-            "title" => $_POST["title"],
-        ]);
+        Handling::insertHandling(
+            $_POST["type"],
+            $_POST["status"],
+            $_POST["title"],
+        );
 
         $handling_id = $conn->lastInsertId();
 
@@ -25,16 +25,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $product_id = $products[$i];
             $qtd = $quantities[$i];
 
-            Handling::insertHandleItem([
-                "h_id" => $handling_id,
-                "prd_id" => $product_id,
-                "qtd" => $qtd,
-            ]);
+            Handling::insertHandleItem(
+                $handling_id,
+                $product_id,
+                $qtd,
+            );
 
-            Product::updateQuantity([
-                "qtd" => $qtd,
-                "id" => $product_id,
-            ], $_POST["type"]);
+            Product::updateQuantity( $product_id,
+               $qtd, $_POST["type"]);
         }
 
         $_SESSION["success"] = "Movimentação realizada com sucesso!";
@@ -42,11 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: handles.php");
         exit;
     } else {
-        Handling::insertHandling([
-            "type" => $_POST["type"],
-            "status" => $_POST["status"],
-            "title" => $_POST["title"],
-        ]);
+        Handling::insertHandling(
+            $_POST["type"],
+            $_POST["status"],
+            $_POST["title"],
+        );
 
         $handling_id = $conn->lastInsertId();
 
@@ -57,11 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $prdId = $products[$i];
             $qtd = $quantities[$i];
 
-            Handling::insertHandleItem([
-                "h_id" => $handling_id,
-                "prd_id" => $prdId,
-                "qtd" => $qtd,
-            ]);
+            Handling::insertHandleItem(
+                $handling_id,
+                $prdId,
+                $qtd,
+            );
         }
 
         $_SESSION["success"] = "Registro de movimentação criado com sucesso!";
@@ -95,6 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h1>Movimentar produto</h1>
 
             <p>Preencha os campos abaixo:</p>
+
+            <?php require __DIR__ . "/../resources/components/error.php" ?>
+            <?php require __DIR__ . "/../resources/components/success.php" ?>
 
             <div class="mb-3 w-25">
                 <label for="status" class="form-label">Status</label>

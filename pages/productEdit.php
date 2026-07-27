@@ -3,34 +3,17 @@ require_once __DIR__ . "/../config/app.php";
 require_once __DIR__ . "/../config/database.php";
 require_once __DIR__ . "/../app/controllers/productController.php";
 require_once __DIR__ . "/../app/helper/executeSQL.php";
+require_once __DIR__ . "/../app/helper/redirect.php";
 
 if($_SERVER["REQUEST_METHOD"] === "POST") {
-    $sql = "
-        UPDATE products
-        SET description = :description
-        WHERE id = :id
-    ";
+    Product::updateDescription($_POST["description"], $_GET["id"]);
 
-    $stmt = $conn->prepare($sql);
-    $stmt->execute([
-        "description" => $_POST["description"],
-        "id" => $_GET["id"],
-    ]);
+    $_SESSION["success"] = "Produto alterado com sucesso!";
+    redirect("index.php");
 } 
 
 if(!empty($_GET["id"])) {
-    $sql = "
-        SELECT description
-        FROM products
-        WHERE id = :id
-    ";
-
-    $stmt = $conn->prepare($sql);
-    $stmt->execute([
-        "id" => $_GET["id"],
-    ]);
-
-    $product = $stmt->fetch();
+    $product = Product::fetchProduct($_GET["id"]);
 
     $description = $product["description"];
 }
@@ -55,15 +38,8 @@ if(!empty($_GET["id"])) {
                 <a href="../index.php" type="button" class="btn btn-secondary">Voltar</a>
         </div>
 
-        <?php
-            if(isset($_SESSION["success"])) {
-                echo '<div class="alert alert-success" role="alert">'
-                        . $_SESSION['success'] . 
-                    '</div>';
-
-                unset($_SESSION['success']);
-            }
-        ?>
+        <?php require __DIR__ . "/../resources/components/error.php" ?>
+        <?php require __DIR__ . "/../resources/components/success.php" ?>
 
         <form class="w-100" method="POST" action="productEdit.php?id=<?= $_GET["id"] ?>">
             <h1>Alterar produto</h1>
