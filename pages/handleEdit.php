@@ -4,11 +4,14 @@ require_once __DIR__ . "/../config/database.php";
 require_once __DIR__ . "/../app/controllers/handlingController.php";
 require_once __DIR__ . "/../app/controllers/productController.php";
 require_once __DIR__ . "/../app/helper/executeSQL.php";
+require_once __DIR__ . "/../app/helper/redirect.php";
 
+// Store variables
 $allProducts = Product::fetchProducts();
 
 $products = $handling = $status = $type = [];
 
+// 1. Update variables
 function refreshData()
 {
     global $products, $handling, $status, $type;
@@ -22,12 +25,25 @@ function refreshData()
 
 refreshData();
 
-// 1. Trás os produtos com base nas movimentações_item
+// 2. Edit validation
+
+// 3. If form are sended, execute this
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    // Validate if the quantity are not null
+    for($i = 0; $i < count($_POST["quantities"]); $i++) {
+        if($_POST["quantities"][$i] === '') {
+            $_SESSION["error"] = "Preencha a quantidade de todos os produtos!";
+            redirect("handleEdit.php?id=" . $_GET['id']);
+        }
+    };
+
+    // 4. If user try to change manually (F12) an finished form to open, then die
     if ($status == "F" && $_POST["status"] == "A") {
         die("Error 403 | Unauthorized Action");
     };
 
+    // 5. Separe products id and quantity in a variable
     $products_id = [];
 
     foreach ($products as $p) {
@@ -38,12 +54,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     };
 
+    // 6. Check if you're removing a new product
     for ($i = 0; $i < count($products_id); $i++) {
         if (!in_array($products_id[$i], $_POST["products"])) {
             Handling::deleteHandleItem($products_id[$i], $_GET["id"]);
         }
     };
 
+    // 7. Check if you're adding a new product
     for ($i = 0; $i < count($_POST["products"]); $i++) {
         if (!in_array($_POST["products"][$i], $products_id)) {
             Handling::insertHandleItem(
@@ -54,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     };
 
-    // Permanecer registro em aberto
+    // 8. If the handling continues opened, just update handle quantity
     if ($status == "A") {
         for ($i = 0; $i < count($_POST['products']); $i++) {
             Handling::updateItemQuantity(
@@ -67,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Fechar e efetivar movimentação
+    // 9. If the handling changed open to finished, then update products quantity and handle status
     if ($status == "A" && $_POST["status"] == "F") {
         Handling::updateHandligStatus($_GET["id"], "F");
 

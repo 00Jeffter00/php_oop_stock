@@ -5,26 +5,36 @@ require_once __DIR__ . "/../app/controllers/handlingController.php";
 require_once __DIR__ . "/../app/controllers/productController.php";
 require_once __DIR__ . "/../app/helper/redirect.php";
 
-if ($_SERVER["REQUEST_METHOD"] === "GET" && !empty($_GET["id"])) {
+// Handle reopening/deleting validation
+if (!empty($_GET["id"])) {
+
+    // 1. Fetch all "handle_items"
     $result = Handling::fetchItemByHandle($_GET["id"]);
 
+    // 2. If type = F (finished), reopen
     if ($result[0]["status"] === "F") {
         $products = [];
 
+        // 2.1 Separe products id and quantity in an array
         for ($i = 0; $i < count($result); $i++) {
             $products[$result[$i]["prd_id"]] = $result[$i]["qtd"];
         }
 
+        // 2.2 Separe the type of movimentation
         $movement = $result[0]["type"];
 
+        // 2.3 For each product on $products array, update its quantity
         foreach ($products as $key => $value) {
             Product::updateQuantity($key, $value, $movement, true);
         };
 
+        // 2.4 Update the handling status to "A" (open)
         Handling::updateHandligStatus($_GET["id"], "A");
 
         $_SESSION["success"] = "Movimentação reaberta com sucesso!";
         redirect("pages/handles.php");
+    
+    // 3. Else, delete
     } else {
         Handling::deleteHandle($_GET["id"]);
 

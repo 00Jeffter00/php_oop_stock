@@ -30,6 +30,22 @@ class Product
         return executeSQL($sql, $params);
     }
 
+    public static function fetchProductByName(string $description)
+    {
+        $sql = "
+            SELECT
+             * 
+            FROM products
+            WHERE description = :desc
+        ";
+
+        $params = [ 
+            "desc" => $description
+        ];
+
+        return executeSQL($sql, $params);
+    }
+
     public static function fetchProductHandle(int $handle_id)
     {
         $sql = "

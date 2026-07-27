@@ -4,7 +4,10 @@ require_once __DIR__ . "/app/controllers/productController.php";
 require_once __DIR__ . "/app/helper/executeSQL.php";
 require_once __DIR__ . "/app/helper/redirect.php";
 
+// Product delete validation
 if (!empty($_GET["id"])) {
+
+    // 1. Query if the product have any handle
     $result = executeSQL("
         SELECT 
             prd_id
@@ -12,16 +15,18 @@ if (!empty($_GET["id"])) {
         WHERE prd_id = :id
     ", ["id" => $_GET["id"]]);
 
+    // 2. If have handle redirect
     if ($result) {
         $_SESSION["error"] = "Não foi possível excluir o produto, pois o mesmo possui movimentação!";
         
         redirect("index.php");
-    } else {
-        Product::deleteProduct($_GET["id"]);
-        $_SESSION["success"] = "Produto removido com sucesso!";
+    }
 
-        redirect("index.php");
-    };
+    // 3. If not, delete
+    Product::deleteProduct($_GET["id"]);
+    $_SESSION["success"] = "Produto removido com sucesso!";
+
+    redirect("index.php");
 }
 ?>
 

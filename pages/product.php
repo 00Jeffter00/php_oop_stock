@@ -3,8 +3,26 @@ require_once __DIR__ . "/../config/app.php";
 require_once __DIR__ . "/../config/database.php";
 require_once __DIR__ . "/../app/controllers/productController.php";
 require_once __DIR__ . "/../app/helper/executeSQL.php";
+require_once __DIR__ . "/../app/helper/redirect.php";
 
+// Product creation validation
 if($_SERVER['REQUEST_METHOD'] === "POST") {
+    // 1. Checks if the descripton are filled
+    if($_POST["description"] === "") {
+        $_SESSION["error"] = "Preencha uma descrição!";
+        redirect("product.php");
+    }
+
+    // 2. Query if the product already exists on the database
+    $alreadyExists = Product::fetchProductByName($_POST["description"]);
+    
+    // 3. If exists, don't create
+    if($alreadyExists) {
+        $_SESSION["error"] = "Já existe um produto com esse nome!";
+        redirect("product.php");
+    }    
+
+    // 4. Else, create product
     Product::insertProduct($_POST["description"]);
 
     $_SESSION["success"] = "Produto cadastrado com sucesso!";

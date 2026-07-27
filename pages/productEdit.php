@@ -6,6 +6,22 @@ require_once __DIR__ . "/../app/helper/executeSQL.php";
 require_once __DIR__ . "/../app/helper/redirect.php";
 
 if($_SERVER["REQUEST_METHOD"] === "POST") {
+    // 1. Checks if the descripton are filled
+    if($_POST["description"] === "") {
+        $_SESSION["error"] = "Preencha uma descrição!";
+        redirect("product.php");
+    }
+
+    // 2. Query if the product already exists on the database
+    $alreadyExists = Product::fetchProductByName($_POST["description"]);
+    
+    // 3. If exists, don't create
+    if($alreadyExists) {
+        $_SESSION["error"] = "Já existe um produto com esse nome!";
+        redirect("product.php");
+    }  
+
+    // 4. Update product description
     Product::updateDescription($_POST["description"], $_GET["id"]);
 
     $_SESSION["success"] = "Produto alterado com sucesso!";
@@ -13,8 +29,10 @@ if($_SERVER["REQUEST_METHOD"] === "POST") {
 } 
 
 if(!empty($_GET["id"])) {
+    // 5. Fetch product by id
     $product = Product::fetchProduct($_GET["id"]);
 
+    // 6. Separe its description in an variable
     $description = $product["description"];
 }
 

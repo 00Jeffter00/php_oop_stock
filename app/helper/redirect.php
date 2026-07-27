@@ -1,6 +1,6 @@
 <?php
 function redirect(string $page) {
 
-    Header("Location: /php/stock/$page"); 
+    Header("Location: " . $page); 
     exit;
 }

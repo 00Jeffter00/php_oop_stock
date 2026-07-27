@@ -5,41 +5,56 @@ require_once __DIR__ . "/../app/controllers/productController.php";
 require_once __DIR__ . "/../app/controllers/handlingController.php";
 require_once __DIR__ . "/../app/helper/executeSQL.php";
 
+// 1. Fetch all products
 $products = Product::fetchProducts();
 
+// 2. Checks if the form are sended
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    // 3. Checks for status
+
+    // 2. If status = "F" then create handle, create handle_item and movement stock
     if ($_POST["status"] == "F") {
+        // 2.1 Create handle item
         Handling::insertHandling(
             $_POST["type"],
             $_POST["status"],
             $_POST["title"],
         );
 
+        // 2.2 Get last id
         $handling_id = $conn->lastInsertId();
 
+        // 2.3 Separe products array and quantities array in an variable
         $products = $_POST["products"];
         $quantities = $_POST["quantities"];
 
+        // 2.4 Iterate on all products
         for ($i = 0; $i < count($products); $i++) {
             $product_id = $products[$i];
             $qtd = $quantities[$i];
 
+            // 2.4.1 Create handle_item
             Handling::insertHandleItem(
                 $handling_id,
                 $product_id,
                 $qtd,
             );
 
+            // 2.4.2 Update product quantity
             Product::updateQuantity( $product_id,
                $qtd, $_POST["type"]);
         }
 
+        // 2.5 End
         $_SESSION["success"] = "Movimentação realizada com sucesso!";
 
         header("Location: handles.php");
         exit;
+
+    // 3. Else, just create handling and handle_item
     } else {
+        // 3.1 Create handling, get last id and separe products and quantities in a variable
         Handling::insertHandling(
             $_POST["type"],
             $_POST["status"],
@@ -51,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $products = $_POST["products"];
         $quantities = $_POST["quantities"];
 
+        // 3.2 Create handle_item
         for ($i = 0; $i < count($products); $i++) {
             $prdId = $products[$i];
             $qtd = $quantities[$i];
@@ -62,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
         }
 
+        // 3.3 End
         $_SESSION["success"] = "Registro de movimentação criado com sucesso!";
 
         header("Location: handles.php");
